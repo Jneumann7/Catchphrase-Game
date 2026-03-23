@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Catchphrase Local</title>
+</head>
+<body>
+  <h1>Catchphrase</h1>
+
+  <input id="name" placeholder="Enter your name" />
+  <button onclick="join()">Join</button>
+
+  <h2>Players:</h2>
+  <ul id="players"></ul>
+
+  <button onclick="startRound()">Start Round</button>
+  <button onclick="guess()">I GUESSED IT</button>
+
+  <h2 id="result"></h2>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
