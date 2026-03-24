@@ -1,23 +1,131 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Catchphrase Local</title>
+  <title>Catchphrase</title>
+  <style>
+    body { font-family: Arial; text-align: center; }
+    .hidden { display: none; }
+    button { margin: 5px; padding: 10px; }
+  </style>
 </head>
 <body>
-  <h1>Catchphrase</h1>
 
-  <input id="name" placeholder="Enter your name" />
-  <button onclick="join()">Join</button>
+<h1>Catchphrase</h1>
 
-  <h2>Players:</h2>
-  <ul id="players"></ul>
+<!-- JOIN SCREEN -->
+<div id="joinScreen">
+  <input id="nameInput" placeholder="Enter your name" />
+  <button onclick="joinGame()">Join</button>
+</div>
 
-  <button onclick="startRound()">Start Round</button>
-  <button onclick="guess()">I GUESSED IT</button>
+<!-- LOBBY -->
+<div id="lobbyScreen" class="hidden">
+  <h2>Players</h2>
+  <ul id="playerList"></ul>
+  <button onclick="startGame()">Start Game (Host)</button>
+</div>
 
-  <h2 id="result"></h2>
+<!-- GAME INFO -->
+<div id="gameScreen" class="hidden">
+  <h2 id="turnInfo"></h2>
+  <p id="nextPlayer"></p>
+  <p id="lastGuess"></p>
+</div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
+<!-- YOUR TURN -->
+<div id="yourTurnScreen" class="hidden">
+  <h2 id="wordDisplay"></h2>
+  <button onclick="skipWord()">Skip</button>
+  <div id="guesserButtons"></div>
+</div>
+
+<!-- POPUP -->
+<div id="popup" class="hidden"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+let myId = null;
+
+// JOIN
+function joinGame() {
+  const name = document.getElementById("nameInput").value;
+  socket.emit("joinGame", name);
+
+  document.getElementById("joinScreen").classList.add("hidden");
+  document.getElementById("lobbyScreen").classList.remove("hidden");
+}
+
+// START GAME
+function startGame() {
+  socket.emit("startGame");
+}
+
+// UPDATE PLAYER LIST
+socket.on("playerList", (players) => {
+  const list = document.getElementById("playerList");
+  list.innerHTML = "";
+
+  players.forEach(p => {
+    const li = document.createElement("li");
+    li.textContent = p.name;
+    list.appendChild(li);
+  });
+});
+
+// ROUND UPDATE
+socket.on("roundUpdate", (data) => {
+  document.getElementById("gameScreen").classList.remove("hidden");
+
+  document.getElementById("turnInfo").textContent =
+    data.currentPlayer + "'s turn";
+
+  document.getElementById("nextPlayer").textContent =
+    "Next: " + data.nextPlayer;
+
+  document.getElementById("lastGuess").textContent =
+    data.lastCorrectGuesser
+      ? "Last correct: " + data.lastCorrectGuesser
+      : "";
+});
+
+// YOUR TURN
+socket.on("yourTurn", (data) => {
+  document.getElementById("yourTurnScreen").classList.remove("hidden");
+
+  document.getElementById("wordDisplay").textContent = data.word;
+
+  const container = document.getElementById("guesserButtons");
+  container.innerHTML = "";
+
+  data.players.forEach(p => {
+    const btn = document.createElement("button");
+    btn.textContent = p.name;
+    btn.onclick = () => {
+      socket.emit("correctGuess", p.id);
+      document.getElementById("yourTurnScreen").classList.add("hidden");
+    };
+    container.appendChild(btn);
+  });
+});
+
+// SKIP
+function skipWord() {
+  socket.emit("skipWord");
+}
+
+// POPUP
+socket.on("correctGuessPopup", (data) => {
+  const popup = document.getElementById("popup");
+  popup.textContent = data.guesser + " guessed correctly!";
+  popup.classList.remove("hidden");
+
+  setTimeout(() => {
+    popup.classList.add("hidden");
+  }, 2000);
+});
+</script>
+
 </body>
 </html>
