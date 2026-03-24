@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Catchphrase - Player</title>
+  <link rel="stylesheet" href="/player/player.css">
+</head>
+<body>
+
+<h1>Catchphrase</h1>
+
+<div id="joinScreen">
+  <input id="nameInput" placeholder="Enter your name" />
+  <button onclick="joinGame()">Join</button>
+</div>
+
+<div id="waitingScreen" class="hidden">
+  <h2>Waiting for host...</h2>
+  <p id="firstNotice"></p>
+</div>
+
+<div id="yourTurnScreen" class="hidden">
+  <div class="card">
+    <h2 id="word"></h2>
+    <button onclick="skipWord()">Skip</button>
+  </div>
+
+  <div id="buttons"></div>
+</div>
+
+<div id="notTurnScreen" class="hidden">
+  <h2 id="prompt"></h2>
+  <p id="next"></p>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/shared/socket.js"></script>
+<script src="/player/player.js"></script>
+
+</body>
+</html>

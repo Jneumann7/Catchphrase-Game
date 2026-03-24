@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Catchphrase - Host</title>
+  <link rel="stylesheet" href="/host/host.css">
+</head>
+<body>
+
+<h1>Catchphrase</h1>
+
+<div id="lobby">
+  <h2>Players</h2>
+  <ul id="players"></ul>
+  <button onclick="startGame()">Start Game</button>
+</div>
+
+<div id="game" class="hidden">
+  <h2>Round In Progress</h2>
+  <p id="current"></p>
+  <p id="next"></p>
+  <p id="last"></p>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/shared/socket.js"></script>
+<script src="/host/host.js"></script>
+
+</body>
+</html>

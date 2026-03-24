@@ -12,6 +12,15 @@ const os = require("os");
 // Serve static files from "public" directory
 app.use(express.static("public")); 
 
+// Routes for player and host pages
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/public/player/index.html");
+});
+
+app.get("/host", (req, res) => {
+  res.sendFile(__dirname + "/public/host/index.html");
+});
+
 // ================= GAME STATE =================
 const gameState = {
   players: [],
