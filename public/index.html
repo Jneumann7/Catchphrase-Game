@@ -4,39 +4,84 @@
   <title>Catchphrase</title>
   <style>
     body { font-family: Arial; text-align: center; }
+
     .hidden { display: none; }
-    button { margin: 5px; padding: 10px; }
+
+    button {
+      margin: 5px;
+      padding: 12px;
+      font-size: 16px;
+    }
+
+    .big-text {
+      font-size: 40px;
+      font-weight: bold;
+    }
+
+    .card {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin: 10px;
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
 
 <h1>Catchphrase</h1>
 
-<!-- JOIN SCREEN -->
-<div id="joinScreen">
-  <input id="nameInput" placeholder="Enter your name" />
-  <button onclick="joinGame()">Join</button>
+<!-- ================= HOST VIEW ================= -->
+<div id="hostView" class="hidden">
+
+  <!-- Lobby -->
+  <div id="hostLobby">
+    <h2>Players</h2>
+    <ul id="hostPlayerList"></ul>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="hostGame" class="hidden">
+    <h2>Round In Progress</h2>
+    <p id="hostCurrent"></p>
+    <p id="hostNext"></p>
+    <p id="hostLastGuess"></p>
+  </div>
+
 </div>
 
-<!-- LOBBY -->
-<div id="lobbyScreen" class="hidden">
-  <h2>Players</h2>
-  <ul id="playerList"></ul>
-  <button onclick="startGame()">Start Game (Host)</button>
-</div>
+<!-- ================= PLAYER VIEW ================= -->
+<div id="playerView" class="hidden">
 
-<!-- GAME INFO -->
-<div id="gameScreen" class="hidden">
-  <h2 id="turnInfo"></h2>
-  <p id="nextPlayer"></p>
-  <p id="lastGuess"></p>
-</div>
+  <!-- Join -->
+  <div id="joinScreen">
+    <input id="nameInput" placeholder="Enter your name" />
+    <button onclick="joinGame()">Join</button>
+  </div>
 
-<!-- YOUR TURN -->
-<div id="yourTurnScreen" class="hidden">
-  <h2 id="wordDisplay"></h2>
-  <button onclick="skipWord()">Skip</button>
-  <div id="guesserButtons"></div>
+  <!-- Waiting -->
+  <div id="waitingScreen" class="hidden">
+    <h2>Waiting for host to start...</h2>
+    <p id="firstPlayerNotice"></p>
+  </div>
+
+  <!-- YOUR TURN -->
+  <div id="yourTurnScreen" class="hidden">
+    <div class="card">
+      <div class="big-text" id="wordDisplay"></div>
+      <button onclick="skipWord()">Skip</button>
+    </div>
+
+    <h3>Who guessed correctly?</h3>
+    <div id="guesserButtons"></div>
+  </div>
+
+  <!-- NOT YOUR TURN -->
+  <div id="notTurnScreen" class="hidden">
+    <h2 id="guessPrompt"></h2>
+    <p id="upNext"></p>
+  </div>
+
 </div>
 
 <!-- POPUP -->
@@ -47,51 +92,100 @@
 const socket = io();
 
 let myId = null;
+let myName = "";
+let isHost = new URLSearchParams(window.location.search).get("role") === "host";
 
-// JOIN
-function joinGame() {
-  const name = document.getElementById("nameInput").value;
-  socket.emit("joinGame", name);
-
-  document.getElementById("joinScreen").classList.add("hidden");
-  document.getElementById("lobbyScreen").classList.remove("hidden");
+// ================= INIT =================
+if (isHost) {
+  document.getElementById("hostView").classList.remove("hidden");
+} else {
+  document.getElementById("playerView").classList.remove("hidden");
 }
 
-// START GAME
+// ================= HOST =================
 function startGame() {
   socket.emit("startGame");
 }
 
-// UPDATE PLAYER LIST
+// ================= PLAYER =================
+function joinGame() {
+  myName = document.getElementById("nameInput").value;
+
+  socket.emit("joinGame", myName);
+
+  document.getElementById("joinScreen").classList.add("hidden");
+  document.getElementById("waitingScreen").classList.remove("hidden");
+}
+
+// ================= PLAYER LIST =================
 socket.on("playerList", (players) => {
-  const list = document.getElementById("playerList");
-  list.innerHTML = "";
 
-  players.forEach(p => {
-    const li = document.createElement("li");
-    li.textContent = p.name;
-    list.appendChild(li);
-  });
+  // HOST VIEW
+  if (isHost) {
+    const list = document.getElementById("hostPlayerList");
+    list.innerHTML = "";
+
+    players.forEach((p, i) => {
+      const li = document.createElement("li");
+      li.textContent = p.name + (i === 0 ? " (First)" : "");
+      list.appendChild(li);
+    });
+  }
+
+  // PLAYER VIEW
+  if (!isHost) {
+    if (players.length > 0 && players[0].name === myName) {
+      document.getElementById("firstPlayerNotice").textContent =
+        "You are going first";
+    }
+  }
 });
 
-// ROUND UPDATE
+// ================= ROUND UPDATE =================
 socket.on("roundUpdate", (data) => {
-  document.getElementById("gameScreen").classList.remove("hidden");
 
-  document.getElementById("turnInfo").textContent =
-    data.currentPlayer + "'s turn";
+  // HOST UI
+  if (isHost) {
+    document.getElementById("hostLobby").classList.add("hidden");
+    document.getElementById("hostGame").classList.remove("hidden");
 
-  document.getElementById("nextPlayer").textContent =
-    "Next: " + data.nextPlayer;
+    document.getElementById("hostCurrent").textContent =
+      data.currentPlayer + "'s turn";
 
-  document.getElementById("lastGuess").textContent =
-    data.lastCorrectGuesser
-      ? "Last correct: " + data.lastCorrectGuesser
-      : "";
+    document.getElementById("hostNext").textContent =
+      "Next: " + data.nextPlayer;
+
+    document.getElementById("hostLastGuess").textContent =
+      data.lastCorrectGuesser
+        ? "Last correct: " + data.lastCorrectGuesser
+        : "";
+  }
+
+  // PLAYER UI
+  if (!isHost) {
+
+    document.getElementById("waitingScreen").classList.add("hidden");
+
+    // If NOT your turn
+    if (data.currentPlayer !== myName) {
+      document.getElementById("yourTurnScreen").classList.add("hidden");
+      document.getElementById("notTurnScreen").classList.remove("hidden");
+
+      document.getElementById("guessPrompt").textContent =
+        "Guess " + data.currentPlayer + "'s word";
+
+      document.getElementById("upNext").textContent =
+        data.nextPlayer === myName ? "You are up next" : "";
+    }
+  }
 });
 
-// YOUR TURN
+// ================= YOUR TURN =================
 socket.on("yourTurn", (data) => {
+
+  if (isHost) return;
+
+  document.getElementById("notTurnScreen").classList.add("hidden");
   document.getElementById("yourTurnScreen").classList.remove("hidden");
 
   document.getElementById("wordDisplay").textContent = data.word;
@@ -102,20 +196,21 @@ socket.on("yourTurn", (data) => {
   data.players.forEach(p => {
     const btn = document.createElement("button");
     btn.textContent = p.name;
+
     btn.onclick = () => {
       socket.emit("correctGuess", p.id);
-      document.getElementById("yourTurnScreen").classList.add("hidden");
     };
+
     container.appendChild(btn);
   });
 });
 
-// SKIP
+// ================= SKIP =================
 function skipWord() {
   socket.emit("skipWord");
 }
 
-// POPUP
+// ================= POPUP =================
 socket.on("correctGuessPopup", (data) => {
   const popup = document.getElementById("popup");
   popup.textContent = data.guesser + " guessed correctly!";
