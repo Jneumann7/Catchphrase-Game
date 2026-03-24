@@ -1,7 +1,4 @@
 // Client-side script for Catchphrase game, handles UI interactions and communicates with server via WebSockets
-// Connect to server
-const socket = io();
-
 // Join game with entered name
 function join() {
   const name = document.getElementById("name").value;

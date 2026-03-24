@@ -150,5 +150,5 @@ function getLocalIP() {
 const PORT = 3000;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running at http://${getLocalIP()}:${PORT}`);
-  console.log(`Host Link is http://${getLocalIP()}:${PORT}?role=host`);
+  console.log(`Host Link is http://${getLocalIP()}:${PORT}/host`);
 });
