@@ -1,3 +1,4 @@
+import './styles/index.css';
 // Client-side script for Catchphrase game, handles UI interactions and communicates with server via WebSockets
 // Join game with entered name
 function join() {
